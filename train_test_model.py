@@ -17,10 +17,13 @@ for sample_index, input_signal in enumerate(x_data):
   for time_index, _input in enumerate(input_signal):
     y_data[sample_index, time_index] = pendulum_model.update(_input)
 
+    
+    
 pyplot.subplot(2,1,1)
-pyplot.plot(x_data[0,:])
+pyplot.plot(x_data[0,:], label='input_signal')
 pyplot.plot(2,1,2)
-pyplot.plot(y_data[0,:])
+pyplot.plot(y_data[0,:], label='output_signal')
+pyplot.grid()
 pyplot.show()
 
 
@@ -47,18 +50,19 @@ for epoch_index in range(epochs):
     # lower resolution than the original series contained in data_input.
     # Each of these series are offset by one step and can be
     # extracted with data_input[i::batch_size].
-    model.fit(x_train,
-                       y_train,
-                       batch_size=batch_size,
-                       epochs=1,
-                       verbose=1,
-                       validation_data=(x_test, y_test),
-                       shuffle=False)
+    model.fit(x_train, y_train,
+              batch_size=1, epochs=1,
+              verbose=1, validation_data=(x_val, y_val),
+              shuffle=False)
     model.reset_states()
 
-    pyplot.subplot(2,1,1)
-    pyplot.plot(x_test[0,:])
-    pyplot.plot(2,1,2)
-    pyplot.plot(y_test[0,:])
+y_pred = model.predict(x_test, batch_size=1)
+  
+pyplot.subplot(2,1,1)
+pyplot.plot(x_test[0,:])
+pyplot.plot(2,1,2)
+pyplot.plot(y_test[0,:])
+pyplot.plot(y_pred[0,:])
+pyplot.show()
 
 
