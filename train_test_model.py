@@ -5,6 +5,15 @@ from models import pendulum
 from numpy import cumsum
 from numpy.random import rand
 
+class pd:
+    def __init__(self, k_p, k_d):
+        self.k_p = k_p
+        self.k_d = k_d
+ = 0
+        self.u_m1 = 0
+    
+
+
 
 x_data = cumsum(cumsum(rand(1000,10000)-0.5, axis=1), axis=1)
 y_data = numpy.zeros(x_data.shape)
