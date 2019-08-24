@@ -15,8 +15,13 @@ from matplotlib import pyplot
 
 class pendulum_model:
     def __init__(self, b, c, x_0):
-        ''' Inits pendulum constants and initial state
-        '''
+        """Inits pendulum constants and initial state
+
+        # Arguments
+            b: Pendulum constant 1
+            c: Pendulum constant 2
+            x_0: Initial state
+        """
 
         self.b = b
         self.c = c
@@ -25,12 +30,18 @@ class pendulum_model:
 
 
     def ode(self, x, t, u):
-        ''' Dynamic equations of pendulum
-        x: [theta, omega]
-        t: time steps for ode solving
-        u: external force applied to the pendulum
-        '''
+        """Dynamic equations of pendulum
 
+        # Arguments
+            x: [angle of pendulum, angular velocity of pendulum]
+            t: Time steps for ode solving
+            u: External force applied to the pendulum
+
+        # Returns
+            Derivative of internal states
+        """
+
+        # ODE of pendulum
         theta, omega = x
         dxdt = [omega, -self.b*omega - self.c*numpy.sin(theta)+u]
 
@@ -39,9 +50,16 @@ class pendulum_model:
 
 
     def update(self, u):
-        ''' Interface function for pendulum model
-        u: External force applied to the pendulum
-        '''
+        """Interface function for pendulum model
+
+        # Arguments
+            u: External force applied to the pendulum
+
+        # Returns
+            Angle of pendulum
+        """
+
+        # Solving ODE with scipy library
         x = odeint(self.ode, self.x_0, [0,0.1], args=(u,))
 
         self.x_0 = x[1]
@@ -52,8 +70,8 @@ class pendulum_model:
 
 
 if __name__ == '__main__':
-    ''' Test of pendulum class
-    '''
+    """Test of pendulum_model class
+    """
 
     pendulum = pendulum_model(b=0.25, c=5, x_0=[1,0])
     theta = list()

@@ -1,77 +1,108 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Aug 22 22:36:20 2019
+
+@author: eadali
+"""
+
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
 from sklearn.model_selection import train_test_split
-from models import pendulum
-from numpy import cumsum
-from numpy.random import rand
-
-class pd:
-    def __init__(self, k_p, k_d):
-        self.k_p = k_p
-        self.k_d = k_d
- = 0
-        self.u_m1 = 0
-    
+from models import pendulum_model
+from numpy import cumsum, zeros, random, pi, arange
+from matplotlib import pyplot
 
 
 
-x_data = cumsum(cumsum(rand(1000,10000)-0.5, axis=1), axis=1)
-y_data = numpy.zeros(x_data.shape)
-pendulum_model = pendulum()
 
+# =============================================================================
+# CREATES TRAINING DATA FROM DYNAMIC MODEL
+# =============================================================================
 
+print('Generating data from dynamic pendulum model...')
+
+# Generates input data
+x_data = cumsum(random.rand(128,128)-0.5, axis=1)
+y_data = zeros(x_data.shape)
+
+# Calculates output data with input data and dynamic model
 for sample_index, input_signal in enumerate(x_data):
-  pendulum_model.reset()
-  
-  for time_index, _input in enumerate(input_signal):
-    y_data[sample_index, time_index] = pendulum_model.update(_input)
+    # Creates dynamic pendulum model
+    pendulum = pendulum_model(0.25, 5, [0,0])
 
-    
-    
+    for time_index, u in enumerate(input_signal):
+        y_data[sample_index, time_index] = pendulum.update(u)
+
+    print(sample_index)
+    if sample_index > 10:
+        break
+
+## TODO: split is not working correctly
+indeces = arange(x_data.shape[0])
+random.shuffle(indeces)
+split_index = int(0.32 * indeces.shape[0])
+
+
+x_train = x_data[split_index:]
+y_train = y_data[split_index:]
+x_test = x_data[:split_index]
+y_test = y_data[:split_index]
+
+#x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.33, random_state=42)
+#x_train, y_train = x_data, y_data
+
 pyplot.subplot(2,1,1)
-pyplot.plot(x_data[0,:], label='input_signal')
-pyplot.plot(2,1,2)
-pyplot.plot(y_data[0,:], label='output_signal')
+pyplot.plot(x_train[0,:], label='input_signal')
 pyplot.grid()
+
+pyplot.subplot(2,1,2)
+pyplot.plot(y_train[0,:], label='output_signal')
+pyplot.grid()
+
 pyplot.show()
 
 
 
 
-
+# =============================================================================
+# CREATES LSTM MODEL
+# =============================================================================
 model = Sequential()
-model.add(LSTM(8,input_shape=(lahead, 1), batch_size=batch_size, stateful=stateful))
+model.add(LSTM(8, batch_input_shape=(1,1,1), stateful=True))
 model.add(Dense(1))
 model.compile(loss='mse', optimizer='adam')
+model.summary()
 
 
 
-x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.33, random_state=42)
-x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.33, random_state=42)
 
-
+# =============================================================================
+# TRAINS LSTM MODEL
+# =============================================================================
 epochs = 64
+
+#x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.33, random_state=42)
+
 for epoch_index in range(epochs):
-    print('Epoch', i + 1, '/', epochs)
-    # Note that the last state for sample i in a batch will
-    # be used as initial state for sample i in the next batch.
-    # Thus we are simultaneously training on batch_size series with
-    # lower resolution than the original series contained in data_input.
-    # Each of these series are offset by one step and can be
-    # extracted with data_input[i::batch_size].
-    model.fit(x_train, y_train,
-              batch_size=1, epochs=1,
-              verbose=1, validation_data=(x_val, y_val),
-              shuffle=False)
-    model.reset_states()
+    print('epoch', epoch_index + 1, '/', epochs)
 
-y_pred = model.predict(x_test, batch_size=1)
-  
-pyplot.subplot(2,1,1)
-pyplot.plot(x_test[0,:])
-pyplot.plot(2,1,2)
-pyplot.plot(y_test[0,:])
-pyplot.plot(y_pred[0,:])
-pyplot.show()
+    for sample_index in range(x_train.shape[0]):
+        model.fit(x_train[sample_index,:].reshape(128,1,1), y_train[sample_index,:], batch_size=1, epochs=1,
+                  verbose=1,  shuffle=False)
+        model.reset_states()
 
 
+#validation_data=(x_val, y_val),
+
+#
+#y_pred = model.predict(x_test, batch_size=1)
+#
+#pyplot.subplot(2,1,1)
+#pyplot.plot(x_test[0,:])
+#pyplot.plot(2,1,2)
+#pyplot.plot(y_test[0,:])
+#pyplot.plot(y_pred[0,:])
+#pyplot.show()
+#
+#
