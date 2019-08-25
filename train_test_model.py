@@ -8,8 +8,9 @@ Created on Thu Aug 22 22:36:20 2019
 
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
+from keras.optimizers import RMSprop
 from sklearn.model_selection import train_test_split
-from models import pendulum_model
+from models import mass_spring_damper_model
 from numpy import cumsum, zeros, random, pi, arange
 from matplotlib import pyplot
 
@@ -17,7 +18,7 @@ from matplotlib import pyplot
 
 
 # =============================================================================
-# CREATES TRAINING DATA FROM DYNAMIC MODEL
+# CREATES DATA FROM DYNAMIC MODEL
 # =============================================================================
 
 print('Generating data from dynamic pendulum model...')
@@ -29,35 +30,22 @@ y_data = zeros(x_data.shape)
 # Calculates output data with input data and dynamic model
 for sample_index, input_signal in enumerate(x_data):
     # Creates dynamic pendulum model
-    pendulum = pendulum_model(0.25, 5, [0,0])
+    msd = mass_spring_damper_model(m=1, k=8, b=0.8, x_0=[0,0])
 
     for time_index, u in enumerate(input_signal):
-        y_data[sample_index, time_index] = pendulum.update(u)
+        y_data[sample_index, time_index] = msd.update(u)
 
-    print(sample_index)
-    if sample_index > 10:
-        break
+# Splits training and test data
+x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.2, random_state=42)
 
-## TODO: split is not working correctly
-indeces = arange(x_data.shape[0])
-random.shuffle(indeces)
-split_index = int(0.32 * indeces.shape[0])
-
-
-x_train = x_data[split_index:]
-y_train = y_data[split_index:]
-x_test = x_data[:split_index]
-y_test = y_data[:split_index]
-
-#x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.33, random_state=42)
-#x_train, y_train = x_data, y_data
-
+# Plot one input signal
 pyplot.subplot(2,1,1)
-pyplot.plot(x_train[0,:], label='input_signal')
+pyplot.plot(x_train[20,:], label='input_signal')
 pyplot.grid()
 
+# Plot one output signal
 pyplot.subplot(2,1,2)
-pyplot.plot(y_train[0,:], label='output_signal')
+pyplot.plot(y_train[20,:], label='output_signal')
 pyplot.grid()
 
 pyplot.show()
@@ -69,9 +57,11 @@ pyplot.show()
 # CREATES LSTM MODEL
 # =============================================================================
 model = Sequential()
-model.add(LSTM(8, batch_input_shape=(1,1,1), stateful=True))
+model.add(LSTM(32, input_shape=(1,1), batch_size=1, return_sequences=True, stateful=True))
+model.add(LSTM(32, return_sequences=True, stateful=True))
+model.add(LSTM(32, stateful=True))
 model.add(Dense(1))
-model.compile(loss='mse', optimizer='adam')
+model.compile(loss='mse', optimizer=RMSprop())
 model.summary()
 
 
@@ -80,29 +70,60 @@ model.summary()
 # =============================================================================
 # TRAINS LSTM MODEL
 # =============================================================================
-epochs = 64
+# Number of epochs
+epochs = 256
 
-#x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.33, random_state=42)
-
+# Splits training and validation data
+x_train, x_val, y_train, y_val = train_test_split(x_train, y_train,
+                                                  test_size=0.2, random_state=42)
+# Epoch cycle
 for epoch_index in range(epochs):
     print('epoch', epoch_index + 1, '/', epochs)
 
+    # Sample cycle
+    training_loss = 0
     for sample_index in range(x_train.shape[0]):
-        model.fit(x_train[sample_index,:].reshape(128,1,1), y_train[sample_index,:], batch_size=1, epochs=1,
-                  verbose=1,  shuffle=False)
+        x_sample = x_train[sample_index,:].reshape(-1,1,1)
+        y_sample = y_train[sample_index,:]
+
+        # Trains model
+        history = model.fit(x_sample, y_sample,
+                            batch_size=1, epochs=1, verbose=0,  shuffle=False)
+
+        training_loss = training_loss + history.history['loss'][0]
+
+        # Resets model after sample fit
         model.reset_states()
 
+    # Evaluate model after each epoch
+    validation_loss = 0
+    for sample_index in range(x_val.shape[0]):
+        x_sample = x_val[sample_index,:].reshape(-1,1,1)
+        y_sample = y_val[sample_index,:]
 
-#validation_data=(x_val, y_val),
+        # Calculates loss for each sample
+        validation_loss = validation_loss + model.evaluate(x_sample, y_sample, batch_size=1, verbose=0)
 
-#
-#y_pred = model.predict(x_test, batch_size=1)
-#
-#pyplot.subplot(2,1,1)
-#pyplot.plot(x_test[0,:])
-#pyplot.plot(2,1,2)
-#pyplot.plot(y_test[0,:])
-#pyplot.plot(y_pred[0,:])
-#pyplot.show()
-#
-#
+        # Resets model after sample evaluate
+        model.reset_states()
+
+    print('average training loss..:', training_loss / x_train.shape[1])
+    print('average validation loss..:', validation_loss / x_val.shape[1])
+
+# Saves LSTM model
+model.save('model.h5')
+
+# Predicts model output signal
+y_pred = model.predict(x_test[0,:].reshape(-1,1,1), batch_size=1)
+
+# Plot Results
+pyplot.subplot(2,1,1)
+pyplot.plot(x_test[0,:])
+pyplot.grid()
+
+pyplot.subplot(2,1,2)
+pyplot.plot(y_test[0,:], 'b')
+pyplot.plot(y_pred, 'r')
+pyplot.grid()
+
+pyplot.show()

@@ -68,19 +68,60 @@ class pendulum_model:
 
 
 
+class mass_spring_damper_model:
+    def __init__(self, m, k, b, x_0):
+        self.m = m
+        self.k = k
+        self.b = b
+        self.x_0 = x_0
+
+    def ode(self, x, t, u):
+        pos, acc = x
+
+        dxdt = [acc, -(self.b/self.m)*acc - (self.k/self.m)*pos + (1/self.m)*u]
+
+        return dxdt
+
+    def update(self, u):
+        # Solving ODE with scipy library
+        x = odeint(self.ode, self.x_0, [0,0.1], args=(u,))
+
+        self.x_0 = x[1]
+
+        return x[1,0]
+
+
+
+
 
 if __name__ == '__main__':
-    """Test of pendulum_model class
+    """Test of models
     """
 
-    pendulum = pendulum_model(b=0.25, c=5, x_0=[1,0])
-    theta = list()
+    # Test of pendulum_model class
+#    pendulum = pendulum_model(b=0.25, c=5, x_0=[1,0])
+#    theta = list()
+#
+#    for t in range(512):
+#        theta.append(pendulum.update(0.4))
+#
+#    pyplot.plot(theta, label='theta(t)')
+#    pyplot.legend(loc='best')
+#    pyplot.xlabel('t')
+#    pyplot.grid()
+#    pyplot.show()
+
+    # Test of mass_spring_damper_model class
+    msd = mass_spring_damper_model(m=1, k=8, b=0.8, x_0=[1,0])
+    pos = list()
 
     for t in range(512):
-        theta.append(pendulum.update(0.4))
+        pos.append(msd.update(0.4))
 
-    pyplot.plot(theta, label='theta(t)')
+    pyplot.plot(pos, label='pos(t)')
     pyplot.legend(loc='best')
     pyplot.xlabel('t')
     pyplot.grid()
     pyplot.show()
+
+
