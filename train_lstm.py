@@ -10,9 +10,9 @@ from keras.models import Sequential
 from keras.layers import Dense, LSTM
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint
-from sklearn.model_selection import train_test_split
+from keras.models import load_model
 from models import mass_spring_damper_model
-from numpy import cumsum, zeros, random, pad
+from numpy import cumsum, zeros, random, pad, float32
 from matplotlib import pyplot
 
 
@@ -41,7 +41,7 @@ print('Generating data from dynamic pendulum model...')
 
 # Generates input data
 x_data = cumsum(random.rand(num_samples,num_timesteps)-0.5, axis=1)
-y_data = zeros(x_data.shape)
+y_data = zeros(x_data.shape, dtype=float32)
 
 # Calculates output data with input data and dynamic model
 for sample_index, input_signal in enumerate(x_data):
@@ -52,7 +52,7 @@ for sample_index, input_signal in enumerate(x_data):
         y_data[sample_index, time_index] = msd.update(u)
 
 # Reshape data for LSTM model
-x_data_temp = zeros((x_data.shape[0], x_data.shape[1], num_lookback, 2))
+x_data_temp = zeros((x_data.shape[0], x_data.shape[1], num_lookback, 2), dtype=float32)
 
 x_data = pad(x_data, ((0,0),(num_lookback-1,0)),
                             'constant', constant_values=0.0)
@@ -144,32 +144,36 @@ print(x_train.shape)
 print(y_train.shape)
 
 # Trains LSTM model
-checkpoint = ModelCheckpoint('lstm_model.h5', save_best_only=True)
-lstm_model.fit(x_train, y_train, epochs=256,
-               verbose=1, validation_data=(x_val, y_val),
-               callbacks=[checkpoint,])
+#checkpoint = ModelCheckpoint('lstm_model.h5', save_best_only=True)
+#lstm_model.fit(x_train, y_train, epochs=256,
+#               verbose=1, validation_data=(x_val, y_val),
+#               callbacks=[checkpoint,])
 
 
-# Saves LSTM model
-lstm_model.save('model.h5')
-
-
-#TODO: Implement Evaluation
+# Loads LSTM model
+lstm_model = load_model('lstm_model.h5')
 # Predicts model output signal
-y_pred = zeros(y_test.shape[1])
-for time_index, x in enumerate(x_test[0,]):
-    y_pred[time_index] =
+#x_test[:,:,:,1] = 0.0
+#y_pred = zeros(y_test.shape[1],float32)
+#
+#for time_index, x in enumerate(x_test[0,]):
+#    if time_index
+#    y_pred[time_index] =
 
-y_pred = lstm_model.predict(xx)
+#
+y_pred = lstm_model.predict(x_test[0,].reshape(-1,num_lookback, num_features))
 
 # Plot Results
 #pyplot.subplot(2,1,1)
 #pyplot.plot(x_test[0,:])
 #pyplot.grid()
 
-pyplot.subplot(2,1,2)
-pyplot.plot(yy, 'b')
-pyplot.plot(y_pred, 'r')
+pyplot.subplot(2,1,1)
+pyplot.plot(x_test[0,:,3,0], '.-b', label='input_signal')
 pyplot.grid()
+
+pyplot.subplot(2,1,2)
+pyplot.plot(y_test[0,:], '.-r', label='output_signal')
+pyplot.plot(y_pred)
 
 pyplot.show()
