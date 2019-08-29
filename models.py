@@ -142,7 +142,8 @@ class mass_spring_damper_model:
         return x[1,0]
 
 
-
+#def load_lstm(path):
+#    lstm = lstm_model
 
 class lstm_model:
     def __init__(self, model_shape, num_lookback, num_u, num_y):
@@ -236,24 +237,26 @@ class lstm_model:
 
         # Trains LSTM model
         checkpoint = ModelCheckpoint(path, save_best_only=True)
-        self.model.fit(x_data, y_data, epochs=256,
+        self.model.fit(x_data, y_data, epochs=4,
                        verbose=1, validation_split=validation_split,
                        callbacks=[checkpoint,])
 
         self.lstm_model = load_model(path)
 
 
-
-    def load(self, path):
-        self.lstm_model = load_model(path)
+#
+#    def load(self, path):
+#        self.lstm_model = load_model(path)
 
 
 
     def update(self, u):
-        self.x[0,-1,0:] = u
+        self.x[0,:-1,0] = self.x[0,1:,0]
+        self.x[0,-1,0] = u
         y_pred = self.model.predict(self.x)
 
-        self.x[0,-1,1:] = y_pred
+        self.x[0,:-1,1] = self.x[0,1:,1]
+        self.x[0,-1,1] = y_pred
 
         return y_pred[0]
 

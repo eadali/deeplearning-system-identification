@@ -38,6 +38,13 @@ print('Generating data from dynamic pendulum model...')
 x_data = cumsum(random.rand(num_samples,num_timesteps,1)-0.5, axis=1)
 y_data = zeros(x_data.shape, dtype=float32)
 
+#TODO: remove here
+x_test = x_data[1,]
+y_test = y_data[1,]
+x_data = x_data[1:,]
+y_data = y_data[1:,]
+##
+
 # Calculates output data with input data and dynamic model
 for sample_index, input_signal in enumerate(x_data):
     # Creates dynamic pendulum model
@@ -64,11 +71,36 @@ pyplot.grid()
 
 pyplot.show()
 
-
-
 lstm = lstm_model([8,4], 4, 1, 1)
 
 lstm.fit(x_data,y_data)
+
+#lstm.load
+
+
+
+#x_test = cumsum(random.rand(1,num_timesteps,1)-0.5, axis=1)
+y_pred = list()
+for x in x_test:
+    y_pred.append(lstm.update(x))
+
+
+pyplot.plot(y_test)
+pyplot.plot(y_pred)
+pyplot.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
