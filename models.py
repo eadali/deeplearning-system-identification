@@ -13,7 +13,7 @@ from keras.models import load_model
 
 
 from scipy.integrate import odeint
-from numpy import sin, copy, zeros, float32, pad
+from numpy import sin, copy, zeros, float32
 
 from matplotlib import pyplot
 
@@ -86,6 +86,7 @@ class pendulum_model:
 
 
 
+
 class mass_spring_damper_model:
     def __init__(self, m, k, b, x_0):
         """Inits pendulum constants and initial state
@@ -142,23 +143,35 @@ class mass_spring_damper_model:
         return x[1,0]
 
 
-#def load_lstm(path):
-#    lstm = lstm_model
+
+
 
 class lstm_model:
     def __init__(self, model_shape, num_lookback, num_u, num_y):
-        self.x = zeros((1,num_lookback,num_u+num_y,))
-        self.model = Sequential()
+        """Inits lstm model parameters
 
+        # Arguments
+            model_shape: List of cell number for each layer
+            num_lookback: Number of lookback
+            num_u: Number of inputs
+            num_y: Number of predictions
+        """
+        # Input features of LSTM model
+        self.x = zeros((1,num_lookback,num_u+num_y))
+
+        # Creates LSTM model
+        num_x = num_u + num_y
         num_layers = len(model_shape)
 
-        if self.equal(num_layers, 1):
+        self.model = Sequential()
+
+        if self._equal(num_layers, 1):
             num_cells = model_shape[0]
-            self.model.add(LSTM(num_cells, input_shape=(num_lookback,num_u+num_y)))
+            self.model.add(LSTM(num_cells, input_shape=(num_lookback,num_x)))
 
         else:
             num_cells = model_shape[0]
-            self.model.add(LSTM(num_cells, input_shape=(num_lookback,num_u+num_y),
+            self.model.add(LSTM(num_cells, input_shape=(num_lookback,num_x),
                                 return_sequences=True))
 
             for num_cells in model_shape[1:-1]:
@@ -174,7 +187,17 @@ class lstm_model:
 
 
 
-    def equal(self, val_1, val_2):
+    def _equal(self, val_1, val_2):
+        """Equality check function
+
+        # Arguments
+            val_1: First value for equality
+            val_2: Second value for equality
+
+        # Returns
+            Equality result
+        """
+
         condition_1 = (val_1 > (val_2-0.0001))
         condition_2 = (val_1 < (val_2+0.0001))
 
@@ -183,49 +206,73 @@ class lstm_model:
 
 
     def _reshape(self, x_data, y_data):
+        """Reshapes training data for LSTM
+
+        # Arguments
+            x_data: Features data
+            y_data: Prediction data
+
+        # Returns
+            Reshaped x_data and y_data
+        """
+
         x_data = copy(x_data)
         y_data = copy(y_data)
 
-
-
+        # Gets dimension sizes from LSTM model
         _, num_lookback, num_x = self.model.layers[0].input_shape
         _, num_y = self.model.layers[-1].output_shape
 
+        # Creates a new x_data
         new_shape = (x_data.shape[0], x_data.shape[1]-num_lookback,
                      num_lookback, num_x)
         x_data_new = zeros(new_shape, dtype=float32)
 
         x_data = x_data[:,1:,]
 
+        # Fills new x_data
         for time_index in range(x_data_new.shape[1]):
             x_data_new[:,time_index,:,0:num_x-num_y] = x_data[:,time_index:time_index+num_lookback]
             x_data_new[:,time_index,:,num_x-num_y:num_x] = y_data[:,time_index:time_index+num_lookback]
 
-
+        # Creates a new y data
         y_data_new = y_data[:,num_lookback:,]
 
-        pyplot.subplot(2,1,1)
-        pyplot.plot(x_data_new[0,:,3,0], '.-b', label='input_signal')
-        pyplot.grid()
+        ## TODO: remove here
+#        pyplot.subplot(2,1,1)
+#        pyplot.plot(x_data_new[0,:,3,0], '.-b', label='input_signal')
+#        pyplot.grid()
+#
+#        # Plot one output signal
+#        pyplot.subplot(2,1,2)
+#        pyplot.plot(x_data_new[0,:,3,1], '.-b', label='input_signal')
+#        pyplot.plot(y_data_new[0,:], '.-r', label='output_signal')
+#        pyplot.grid()
+#
+#        pyplot.show()
+#
+#        print(x_data_new.shape)
+#        print(y_data_new.shape)
+        ##
 
-        # Plot one output signal
-        pyplot.subplot(2,1,2)
-        pyplot.plot(x_data_new[0,:,3,1], '.-b', label='input_signal')
-        pyplot.plot(y_data_new[0,:], '.-r', label='output_signal')
-        pyplot.grid()
-
-        pyplot.show()
-
-        print(x_data_new.shape)
-        print(y_data_new.shape)
         return x_data_new, y_data_new
 
 
 
-    def fit(self, x_data, y_data, validation_split=0.2, path='temp_model.h5'):
+    def fit(self, x_data, y_data, num_epochs, validation_split=0.2):
+        """Trains LSTM model
+
+        # Arguments
+            x_data: Features data
+            y_data: Prediction data
+            num_epochs: Number of epochs
+            validation_split: Number of validation sample / Number of training sample
+        """
+
         x_data = copy(x_data)
         y_data = copy(y_data)
 
+        # Reshapes data for LSTM model
         x_data, y_data = self._reshape(x_data, y_data)
 
         _, num_lookback, num_x = self.model.layers[0].input_shape
@@ -236,32 +283,37 @@ class lstm_model:
 
 
         # Trains LSTM model
-        checkpoint = ModelCheckpoint(path, save_best_only=True)
-        self.model.fit(x_data, y_data, epochs=4,
+        checkpoint = ModelCheckpoint('temp_model.h5', save_best_only=True)
+        self.model.fit(x_data, y_data, epochs=num_epochs,
                        verbose=1, validation_split=validation_split,
                        callbacks=[checkpoint,])
 
-        self.lstm_model = load_model(path)
+        self.lstm_model = load_model('temp_model.h5')
 
-
-#
-#    def load(self, path):
-#        self.lstm_model = load_model(path)
 
 
 
     def update(self, u):
+        """Interface function for LSTM model
+
+        # Arguments
+            u: Input value
+
+        # Returns
+            Prediction of LSTM model
+        """
+        # Fills input
         self.x[0,:-1,0] = self.x[0,1:,0]
         self.x[0,-1,0] = u
+
+        # Predicts output
         y_pred = self.model.predict(self.x)
 
+        # Fills output
         self.x[0,:-1,1] = self.x[0,1:,1]
         self.x[0,-1,1] = y_pred
 
         return y_pred[0]
-
-
-
 
 
 
