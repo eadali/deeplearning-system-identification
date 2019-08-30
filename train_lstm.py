@@ -59,18 +59,23 @@ y_train = y_data[int(num_samples*split_ratio):,]
 print('x_train.shape..:', x_train.shape)
 print('y_train.shape..:', y_train.shape)
 
-# Plot one input signal
-pyplot.subplot(2,1,1)
-pyplot.plot(x_train[0,], '.-b', label='u(t)')
-pyplot.legend(loc='best')
-pyplot.grid()
 
 # Plot one output signal
+pyplot.subplot(2,1,1)
+pyplot.plot(y_train[0,], 'b')
+pyplot.xlabel('Time[s]')
+pyplot.ylabel('Position of Mass[m]')
+pyplot.grid()
+
+# Plot one input signal
 pyplot.subplot(2,1,2)
-pyplot.plot(y_train[0,], '.-r', label='y(t)')
+pyplot.plot(x_train[0,], 'b')
+pyplot.xlabel('Time[s]')
+pyplot.ylabel('Force[N]')
 pyplot.legend(loc='best')
 pyplot.grid()
 
+pyplot.tight_layout()
 pyplot.show()
 # =============================================================================
 
@@ -99,27 +104,24 @@ y_pred = zeros(y_test.shape)
 
 for sample_index in range(x_test.shape[0]):
     for time_index in range(x_test.shape[1]):
-        print(x_test[sample_index,time_index,0])
         y_pred[sample_index, time_index] = lstm.update(x_test[sample_index,time_index,0])
 
 # Plots position of mass
 pyplot.subplot(2,1,1)
-pyplot.plot(y_test[0,:,0], '.-b', label='y_msd(t)')
-pyplot.plot(y_pred[0,:,0], '.-r', label='y_lstm(t)')
+pyplot.plot(y_test[0,:,0], 'b', label='MSD')
+pyplot.plot(y_pred[0,:,0], 'r', label='LSTM')
 pyplot.xlabel('Time[s]')
-pyplot.ylabel('Mass Position[m]')
+pyplot.ylabel('Position of Mass[m]')
 pyplot.legend(loc='best')
 pyplot.grid()
 
 # Plots requested torque by PID controller
 pyplot.subplot(2,1,2)
-pyplot.plot(x_test[0,:,0], label='u(t)')
+pyplot.plot(x_test[0,:,0])
 pyplot.xlabel('Time[s]')
 pyplot.ylabel('Force[N]')
-pyplot.legend(loc='best')
 pyplot.grid()
 
+pyplot.tight_layout()
 pyplot.show()
 # =============================================================================
-
-

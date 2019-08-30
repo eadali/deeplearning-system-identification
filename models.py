@@ -238,23 +238,6 @@ class lstm_model:
         # Creates a new y data
         y_data_new = y_data[:,num_lookback:,]
 
-        ## TODO: remove here
-#        pyplot.subplot(2,1,1)
-#        pyplot.plot(x_data_new[0,:,3,0], '.-b', label='input_signal')
-#        pyplot.grid()
-#
-#        # Plot one output signal
-#        pyplot.subplot(2,1,2)
-#        pyplot.plot(x_data_new[0,:,3,1], '.-b', label='input_signal')
-#        pyplot.plot(y_data_new[0,:], '.-r', label='output_signal')
-#        pyplot.grid()
-#
-#        pyplot.show()
-#
-#        print(x_data_new.shape)
-#        print(y_data_new.shape)
-        ##
-
         return x_data_new, y_data_new
 
 
