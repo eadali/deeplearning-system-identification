@@ -8,4 +8,5 @@ The field of ***system identification*** uses statistical methods to build mathe
 
 For this work, **Spring-Mass-Damper System** is selected for model and **Deep GRU Network** is selected for system identification.
 System identification result is shown in the Figure:  
-TODO: add result plot
+![alt text](./imgs/msd_gru.png)
+
