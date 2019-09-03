@@ -6,6 +6,6 @@ TODO: add GRU image
 
 The field of ***system identification*** uses statistical methods to build mathematical models of dynamical systems from measured data. System identification also includes the optimal design of experiments for efficiently generating informative data for fitting such models as well as model reduction. *-from wikipedia.org*  
 
-For this work, Spring-Mass-Damper system is selected for model and Deep GRU Network is selected for system identification.
+For this work, **Spring-Mass-Damper System** is selected for model and **Deep GRU Network** is selected for system identification.
 System identification result is shown in the Figure:  
 TODO: add result plot
